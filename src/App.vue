@@ -134,7 +134,35 @@
     </div>
     <!-- <add-modal /> -->
     <main class="p-4">
-      <div class="flex flex-row items-end justify-end w-full pt-4">
+      <div class="flex flex-row items-end justify-end w-full pt-4 pb-2">
+        <div class="relative pr-2">
+          <!-- Search icon -->
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+            <svg
+              class="w-5 h-5 text-gray-400"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z"
+              />
+            </svg>
+          </span>
+
+          <!-- Input -->
+          <input
+            v-model="search"
+            @input="emitSearch"
+            type="text"
+            placeholder="Search..."
+            class="w-lg pl-10 pr-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
         <button
           class="bg-green-500 text-white rounded-full p-2 shadow transition hover:bg-green-600"
           title="ADD TASK"
@@ -152,8 +180,7 @@
           </svg>
         </button>
       </div>
-
-      <table class="min-w-full divide-y divide-slate-100">
+      <!-- <table class="min-w-full divide-y divide-slate-100">
         <thead class="bg-slate-50">
           <tr>
             <th
@@ -203,23 +230,86 @@
             </td>
           </tr>
         </tbody>
-      </table>
+      </table> -->
     </main>
 
-    <!-- <div class="tasks-container">
-      <h2>My Tasks</h2>
-      <draggable v-model="fruits" item-key="id" :animation="150" handle=".handle" @end="onDragEnd">
+    <table class="min-w-full divide-y divide-slate-100">
+      <thead class="bg-slate-50">
+        <tr>
+          <th
+            class="px-6 py-3 text-center text-xs font-medium text-slate-500 uppercase"
+            v-for="header in tableHeader"
+          >
+            {{ header }}
+          </th>
+        </tr>
+      </thead>
+      <draggable
+        v-model="tasks"
+        item-key="id"
+        :animation="150"
+        @end="onDragEnd"
+        :componentData="{ attrs: { 'data-list': 'tasks' } }"
+        tag="tbody"
+        class="bg-white divide-y divide-slate-100"
+      >
+        <template #item="{ element: task }">
+          <tr
+            class="text-center"
+            style="cursor: grab"
+            v-if="Object.values(task).join(' ').toLowerCase().includes(search.toLowerCase())"
+          >
+            <td class="whitespace-nowrap">
+              <div class="text-sm font-medium text-center">
+                {{ task.title }}
+              </div>
+            </td>
+            <td class="whitespace-nowrap">
+              <div class="text-sm font-medium text-center">
+                {{ task.description }}
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-center">
+              <span :class="isCompleted(task.status)">{{ task.statusLabel }}</span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-center">
+              <span :class="priorityLevel(task.priority)">{{ task.priority }}</span>
+            </td>
+            <td class="whitespace-nowrap text-center text-sm font-medium">
+              <button class="text-red-500 rounded-full transition" title="DELETE">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  class="size-6"
+                >
+                  <path
+                    d="M3.375 3C2.339 3 1.5 3.84 1.5 4.875v.75c0 1.036.84 1.875 1.875 1.875h17.25c1.035 0 1.875-.84 1.875-1.875v-.75C22.5 3.839 21.66 3 20.625 3H3.375Z"
+                  />
+                  <path
+                    fill-rule="evenodd"
+                    d="m3.087 9 .54 9.176A3 3 0 0 0 6.62 21h10.757a3 3 0 0 0 2.995-2.824L20.913 9H3.087Zm6.133 2.845a.75.75 0 0 1 1.06 0l1.72 1.72 1.72-1.72a.75.75 0 1 1 1.06 1.06l-1.72 1.72 1.72 1.72a.75.75 0 1 1-1.06 1.06L12 15.685l-1.72 1.72a.75.75 0 1 1-1.06-1.06l1.72-1.72-1.72-1.72a.75.75 0 0 1 0-1.06Z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </template>
+      </draggable>
+    </table>
+    <!-- <draggable v-model="fruits" item-key="id" :animation="150" handle=".handle" @end="onDragEnd">
         <template #item="{ element }">
           <div class="task-item" :data-id="element.id">
             <span class="handle" style="cursor: grab; margin-right: 0.5rem">☰</span>
             <div class="task-main">
               <div class="task-title">{{ element.prutas }}</div>
               <div class="task-meta">#{{ element.id }}</div>
-            </div>s
+            </div>
+            s
           </div>
         </template>
-      </draggable>
-    </div> -->
+      </draggable> -->
 
     <!-- Footer (optional) -->
     <footer class="bg-white shadow-inner p-4 text-center text-gray-500 text-sm">© 2025</footer>
@@ -228,17 +318,24 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, reactive } from 'vue'
+//package
 import draggable from 'vuedraggable'
 import axios from 'axios'
+import { computed, ref, watch, reactive, onMounted } from 'vue'
 import { getCurrentInstance } from 'vue'
+import { useCounterStore } from './stores/counter'
+import { storeToRefs } from 'pinia'
 // import AddModal from './Modal/AddModal.vue'
 
+const store = useCounterStore()
+const { taskData } = storeToRefs(store)
+const { fetchTasks } = store
 const tasks = ref([])
 const taskObj = reactive({})
 const showModal = ref(false)
 const refetchFlag = ref(false)
 const { proxy } = getCurrentInstance()
+const search = ref('')
 
 function isCompleted(status) {
   if (status == '1') {
@@ -272,6 +369,8 @@ const statusData = ref([
 async function saveTask() {
   taskObj.user_id = 4
   taskObj.isCompleted = taskObj.status
+  taskObj.order = tasks.value.length
+  console.log(taskObj, 'taskObj')
 
   proxy.$swal
     .fire({
@@ -308,23 +407,28 @@ async function saveTask() {
     })
 }
 
-async function getData() {
-  // const res = await axios.get('http://task-management-system-laravel.test/api/getTasks')
-  // console.log(res, 'resresresresteeee')
-  // tasks.value = res.data
-  const res = await axios.get('http://task-management-system-laravel.test/api/getTasks', {
-    headers: {
-      Authorization: 'Bearer 2|xfliIhJQiAcrNtFS0BI0opPA7Q2gule1jFIEU3IN32daeb2c',
-    },
-  })
-  console.log(res, 'resresresresteeee')
-  tasks.value = res.data
-}
+// async function getData() {
+//   const res = await axios.get('http://task-management-system-laravel.test/api/getTasks')
+//   console.log(res, 'resresresresteeee')
+//   tasks.value = res.data
+//   const res = await axios.get('http://task-management-system-laravel.test/api/getTasks', {
+//     headers: {
+//       Authorization: 'Bearer 4|4BA6WnhTut5owkyy8Z5ipvrAhwp8ftFtV5k0ao5Ia2f50837',
+//     },
+//   })
+//   console.log(res, 'resresresresteeee')
+// }
 
-getData()
+// getData()
 
-watch(refetchFlag, () => {
-  getData()
+onMounted(async () => {
+  tasks.value = await fetchTasks()
+  console.log(tasks.value, 'data')
+})
+
+watch(refetchFlag, async () => {
+  // getData()
+  tasks.value = await fetchTasks()
 })
 
 const tableHeader = ref(['TITLE', 'description', 'STATUS', 'PRIORITY', 'ACTION'])
@@ -335,10 +439,33 @@ const fruits = ref([
   { id: 4, prutas: 'apul' },
 ])
 
-const user = computed(() => (counterUser = 0))
+async function onDragEnd(evt) {
+  console.log(evt.srcElement.firstElementChild.__draggable_context.element, 'evt')
+  console.log(evt.srcElement.lastElementChild.__draggable_context.element, 'evt')
 
-function onDragEnd(evt) {
-  console.log('New order:', fruits.value)
+  console.log('evt', evt)
+
+  // const res = await axios.post('http://task-management-system-laravel.test/api/sort', taskObj, {
+  //   headers: {
+  //     Authorization: 'Bearer 2|xfliIhJQiAcrNtFS0BI0opPA7Q2gule1jFIEU3IN32daeb2c',
+  //     'Content-Type': 'application/json',
+  //     Accept: 'application/json',
+  //   },
+  // })
+
+  // const fromList = evt.from.dataset.list
+  // const toList = evt.to.dataset.list
+  // console.log(fromList, 'fromList')
+  // console.log(toList, 'toList')
+
+  // tasks.value.forEach((task, idx) => {
+  //   return (task.order = idx)
+  // })
+  // console.log(tasks.value, 'tasks.value')
+}
+
+function onStart(evt) {
+  const draggableItem = evt.item.__draggable_context.element
 }
 
 function test() {
